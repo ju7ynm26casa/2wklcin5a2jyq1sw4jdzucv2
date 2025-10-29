@@ -1,0 +1,59 @@
+mdview()
+{
+    if [ -z "$1" ]; then
+        echo "Usage: mdview <markdown-file>"
+        return 1
+    fi
+    python3 - <<'EOF' "$1"
+import sys
+from rich.console import Console
+from rich.markdown import Markdown
+from pathlib import Path
+
+md_path = Path(sys.argv[1])
+text = md_path.read_text(encoding="utf-8")
+console = Console()
+console.print(Markdown(text))
+EOF
+}
+
+gguf()
+{
+  if [ -z "$1" ]; then
+    x-www-browser "https://huggingface.co/models?library=gguf"
+  else
+    query="$*"
+    x-www-browser "https://huggingface.co/models?library=gguf&search=$query" \
+                  "https://huggingface.co/models?pipeline_tag=text-generation&library=gguf&search=$query"
+  fi
+}
+
+llama()
+{
+  local ts safe1
+  ts=$(date +%s)
+  safe1=$(echo "$1" | sed 's/[^A-Za-z0-9._-]/_/g' | cut -b 1-64)
+  [ -d "$HOME/.llamalogs" ] || mkdir -p "$HOME/.llamalogs"
+  $HOME/llama.cpp/build/bin/llama-cli \
+    -p "$1" \
+    "${@:2}" \
+    --log-file "$HOME/.llamalogs/${ts}_${safe1}.log"
+}
+
+llama1()
+{
+  local ts safe1
+  ts=$(date +%s)
+  safe1=$(echo "$1" | sed 's/[^A-Za-z0-9._-]/_/g' | cut -b 1-64)
+  [ -d "$HOME/.llamalogs" ] || mkdir -p "$HOME/.llamalogs"
+  $HOME/llama.cpp/build/bin/llama-cli \
+	--offline \
+	--single-turn \
+	--device none \
+	--cpu-strict 1 \
+	--threads 32 \
+	--mlock \
+    -p "$1" \
+    -m "$2" \
+    --log-file "$HOME/.llamalogs/${ts}_${safe1}.log"
+}
